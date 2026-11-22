@@ -119,12 +119,17 @@ class Catch(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     location_id = Column(Integer, ForeignKey("locations.id"), nullable=True)
     location_name = Column(String(150), default="TPI Muara Angke")
+    target_market_id = Column(Integer, ForeignKey("markets.id"), nullable=True)
+    trade_status = Column(String(50), default="none")  # none, submitted, partially_accepted, accepted, rejected
+    fisherman_name = Column(String(120), nullable=True)
+    market_notes = Column(Text, nullable=True)
     catch_date = Column(DateTime, default=datetime.utcnow)
     notes = Column(Text, nullable=True)
     detection_id = Column(Integer, ForeignKey("detections.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="catches")
+    target_market = relationship("Market")
     details = relationship("CatchDetail", back_populates="catch", cascade="all, delete-orphan")
     operating_costs = relationship("OperatingCost", back_populates="catch", cascade="all, delete-orphan")
 
@@ -136,6 +141,9 @@ class CatchDetail(Base):
     species_id = Column(Integer, ForeignKey("fish_species.id"), nullable=False)
     quantity = Column(Integer, default=1)
     weight_kg = Column(Float, nullable=False)
+    status = Column(String(50), default="pending")  # pending, accepted, rejected
+    offered_price_per_kg = Column(Float, nullable=True)
+    market_response_note = Column(String(255), nullable=True)
 
     catch = relationship("Catch", back_populates="details")
     species = relationship("FishSpecies", back_populates="catch_details")

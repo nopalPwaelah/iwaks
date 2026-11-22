@@ -32,6 +32,52 @@ const TONES = {
 
 /* ---------- konten dashboard per role ---------- */
 const ROLE_VIEW = {
+  Public: {
+    badge: 'Portal Terbuka BlueEconomy AI - Ekosistem Maritim Pesisir',
+    fallbackName: 'Tamu / Pengunjung Publik',
+    desc:
+      'Akses intelijen ekonomi pesisir terbuka: pantau harga komoditas ikan harian, jelajahi peta coastal GIS pesisir, rekomendasi pasar, katalog 8 spesies ikan unggulan, dan direktori produk olahan UMKM setempat.',
+    actions: [
+      { label: 'Papan Harga Pasar', icon: TrendingUp, tab: 'prices', primary: true },
+      { label: 'Peta Coastal GIS', icon: MapPin, tab: 'gis' },
+      { label: 'Katalog 8 Spesies Ikan', icon: Database, tab: 'species' }
+    ],
+    kpis: (m) => [
+      {
+        label: 'Komoditas Terpantau', icon: Fish, tone: 'ocean',
+        value: fmt(m.active_species_count || 8), unit: 'Spesies',
+        sub: '8 Spesies ikan prioritas pesisir'
+      },
+      {
+        label: 'Pasar & TPI Terdaftar', icon: Building2, tone: 'amber',
+        value: fmt(m.markets_count), unit: 'Pasar',
+        sub: 'Jaringan pasar & tempat pelelangan'
+      },
+      {
+        label: 'Sentra UMKM Pesisir', icon: Store, tone: 'emerald',
+        value: fmt(m.umkm_count), unit: 'UMKM',
+        sub: 'Mitra olahan produk pesisir', good: true
+      },
+      {
+        label: 'Total Trip Nelayan', icon: Anchor, tone: 'marine',
+        value: fmt(m.total_catches_all), unit: 'Trip',
+        sub: 'Aktivitas pendaratan terdata'
+      }
+    ],
+    left: {
+      title: 'Sentra UMKM & Pasokan Olahan Pesisir',
+      subtitle: 'Rekomendasi UMKM lokal dan produk olahan hasil laut siap dipasarkan',
+      tab: 'umkm', tabLabel: 'Jelajahi UMKM',
+      status: 'Terverifikasi',
+      empty: 'Belum ada data UMKM tercatat.'
+    },
+    right: {
+      title: 'Intelijen Harga Pasar Terkini',
+      subtitle: 'Papan acuan harga komoditas terverifikasi',
+      tab: 'prices'
+    }
+  },
+
   Nelayan: {
     badge: 'Platform Intelijen & Pemberdayaan Ekonomi Pesisir',
     fallbackName: 'Nelayan Hebat',
@@ -122,47 +168,48 @@ const ROLE_VIEW = {
     }
   },
 
-  Admin: {
-    badge: 'Panel Administrasi & Master Data',
-    fallbackName: 'Administrator',
+  'Admin & Stakeholder (DKP)': {
+    badge: 'Portal Kebijakan, Regulasi DKP & Master Data',
+    fallbackName: 'Dinas Kelautan & Admin Sistem',
     desc:
-      'Kelola master data spesies dan pasar, moderasi data UMKM, serta audit aktivitas tangkapan dan pembaruan harga di seluruh platform.',
+      'Pantau statistik agregat tangkapan pelabuhan, sebaran fasilitas coastal GIS, dan tren harga pasar, serta kelola master data katalog spesies dan moderasi UMKM.',
     actions: [
-      { label: 'Kelola Katalog Spesies', icon: Database, tab: 'species', primary: true },
-      { label: 'Audit Intelijen Harga', icon: TrendingUp, tab: 'prices' }
+      { label: 'Buka Coastal GIS', icon: MapPin, tab: 'gis', primary: true },
+      { label: 'Kelola Katalog Spesies', icon: Database, tab: 'species' },
+      { label: 'Audit Catatan Tangkapan', icon: BarChart3, tab: 'catches' }
     ],
-    kpis: (m) => [
+    kpis: (m, d) => [
       {
-        label: 'Spesies Aktif', icon: Database, tone: 'ocean',
-        value: fmt(m.active_species_count || 8), unit: 'Spesies',
-        sub: 'Master data katalog ikan'
-      },
-      {
-        label: 'Pasar Terdaftar', icon: Building2, tone: 'amber',
-        value: fmt(m.markets_count), unit: 'Pasar',
-        sub: 'Master data pasar & TPI'
-      },
-      {
-        label: 'UMKM Terdaftar', icon: Store, tone: 'marine',
-        value: fmt(m.umkm_count), unit: 'UMKM',
-        sub: 'Perlu moderasi & audit'
-      },
-      {
-        label: 'Trip Tercatat', icon: ClipboardList, tone: 'emerald',
+        label: 'Total Trip Tangkapan', icon: BarChart3, tone: 'ocean',
         value: fmt(m.total_catches_all), unit: 'Trip',
-        sub: 'Seluruh nelayan', good: true
+        sub: 'Agregat seluruh pendaratan pelabuhan'
+      },
+      {
+        label: 'Jaringan Pesisir', icon: MapPin, tone: 'amber',
+        value: fmt(m.markets_count), unit: `Pasar • ${fmt(m.umkm_count)} UMKM`,
+        sub: 'Titik TPI, pasar aktif & klaster binaan'
+      },
+      {
+        label: 'Spesies Prioritas', icon: Database, tone: 'marine',
+        value: fmt(m.active_species_count || 8), unit: 'Spesies',
+        sub: 'Master data katalog komoditas'
+      },
+      {
+        label: 'Berat 5 Trip Terakhir', icon: Scale, tone: 'emerald',
+        value: fmt(sumWeight(d?.recent_catches)), unit: 'kg',
+        sub: 'Data timbangan riil terverifikasi', good: true
       }
     ],
     left: {
-      title: 'Audit Aktivitas Tangkapan',
-      subtitle: 'Catatan trip terbaru untuk moderasi data',
+      title: 'Audit & Statistik Tangkapan Terbaru',
+      subtitle: 'Ringkasan pendaratan ikan pelabuhan untuk audit & kebijakan',
       tab: 'catches', tabLabel: 'Lihat Semua',
-      status: 'Terkonfirmasi',
+      status: 'Terverifikasi',
       empty: 'Belum ada aktivitas tangkapan.'
     },
     right: {
-      title: 'Pembaruan Harga Terakhir',
-      subtitle: 'Pantau sumber & kesegaran data',
+      title: 'Intelijen & Pembaruan Harga Pasar',
+      subtitle: 'Pantau sumber harga untuk laporan ekonomi perikanan',
       tab: 'prices'
     }
   },
@@ -210,60 +257,19 @@ const ROLE_VIEW = {
       subtitle: 'Perbarui harga komoditas harian',
       tab: 'prices'
     }
-  },
-
-  Stakeholder: {
-    badge: 'Dashboard Kebijakan & Statistik DKP',
-    fallbackName: 'Dinas Kelautan & Perikanan',
-    desc:
-      'Pantau statistik agregat tangkapan, sebaran fasilitas pesisir, dan indikator harga komoditas sebagai dasar laporan serta pengambilan kebijakan ekonomi pesisir.',
-    actions: [
-      { label: 'Buka Peta Coastal GIS', icon: MapPin, tab: 'gis', primary: true },
-      { label: 'Lihat Statistik Tangkapan', icon: BarChart3, tab: 'catches' }
-    ],
-    kpis: (m, d) => [
-      {
-        label: 'Total Trip Tangkapan', icon: BarChart3, tone: 'ocean',
-        value: fmt(m.total_catches_all), unit: 'Trip',
-        sub: 'Agregat seluruh pelabuhan'
-      },
-      {
-        label: 'Berat 5 Trip Terakhir', icon: Scale, tone: 'marine',
-        value: fmt(sumWeight(d?.recent_catches)), unit: 'kg',
-        sub: 'Data timbangan terverifikasi', good: true
-      },
-      {
-        label: 'Jaringan Pesisir', icon: MapPin, tone: 'amber',
-        value: fmt(m.markets_count), unit: `Pasar • ${fmt(m.umkm_count)} UMKM`,
-        sub: 'Titik TPI, pasar, dan klaster UMKM'
-      },
-      {
-        label: 'Spesies Prioritas', icon: Fish, tone: 'emerald',
-        value: fmt(m.active_species_count || 8), unit: 'Spesies',
-        sub: 'Dipantau untuk laporan ekonomi'
-      }
-    ],
-    left: {
-      title: 'Statistik Tangkapan Terbaru',
-      subtitle: 'Ringkasan trip pelabuhan untuk pemantauan kebijakan',
-      tab: 'catches', tabLabel: 'Lihat Semua',
-      status: 'Terverifikasi',
-      empty: 'Belum ada data tangkapan.'
-    },
-    right: {
-      title: 'Pantauan Harga Komoditas',
-      subtitle: 'Indikator harga untuk laporan ekonomi',
-      tab: 'prices'
-    }
   }
 };
 
+// Aliases for backward compatibility
+ROLE_VIEW['Admin'] = ROLE_VIEW['Admin & Stakeholder (DKP)'];
+ROLE_VIEW['Stakeholder'] = ROLE_VIEW['Admin & Stakeholder (DKP)'];
+
 /* ---------- komponen ---------- */
-export default function DashboardView({ onNavigate, user }) {
+export default function DashboardView({ onNavigate, user, onOpenAuthModal }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const view = ROLE_VIEW[user?.role] || ROLE_VIEW.Nelayan;
+  const view = ROLE_VIEW[user?.role] || ROLE_VIEW.Public;
 
   useEffect(() => {
     let cancelled = false;
@@ -295,8 +301,9 @@ export default function DashboardView({ onNavigate, user }) {
   }
 
   const metrics = data?.metrics || {};
-  const feed = data?.market_price_feed || [];
-  const kpis = view.kpis(metrics, data).map((k) =>
+  const feed = Array.isArray(data?.market_price_feed) ? data.market_price_feed : [];
+  const safeCatches = Array.isArray(data?.recent_catches) ? data.recent_catches : [];
+  const kpis = (view.kpis ? view.kpis(metrics, data) : []).map((k) =>
     k.fromFeed ? { ...k, value: fmt(feed.length) } : k
   );
   const displayName = user?.name || data?.user_name || view.fallbackName;
@@ -344,11 +351,37 @@ export default function DashboardView({ onNavigate, user }) {
         </div>
       </div>
 
+      {/* CTA Khusus Pengunjung Publik */}
+      {user?.role === 'Public' && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-ocean-500/10 to-marine-500/10 border border-ocean-200/90 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-ocean-600 to-marine-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+              <Sparkles className="w-6 h-6 text-amber-300" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Apakah Anda Nelayan, Mitra UMKM, atau Pengelola Pasar?
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Masuk atau daftarkan akun Anda untuk mengakses fitur khusus: Deteksi AI YOLO Ikan, Pencatatan Log Tangkapan Laut, dan Manajemen Pasar Ikan.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenAuthModal}
+            className="flex-shrink-0 px-4 py-2.5 bg-gradient-to-r from-ocean-600 to-marine-600 hover:from-ocean-700 hover:to-marine-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-ocean-600/20 flex items-center space-x-2"
+          >
+            <span>Masuk / Daftar Akun</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((k) => {
           const Icon = k.icon;
-          const tone = TONES[k.tone];
+          const tone = TONES[k.tone] || TONES.ocean;
           return (
             <div
               key={k.label}
@@ -393,10 +426,10 @@ export default function DashboardView({ onNavigate, user }) {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {!data?.recent_catches?.length ? (
+            {!safeCatches.length ? (
               <div className="py-8 text-center text-slate-400 text-sm">{view.left.empty}</div>
             ) : (
-              data.recent_catches.map((c) => (
+              safeCatches.map((c) => (
                 <div
                   key={c.id}
                   className="py-3.5 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition"

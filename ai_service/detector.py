@@ -158,7 +158,7 @@ class FishDetector:
         confidence = min(0.98, max(0.72, scores[best_id] + np.random.uniform(0.05, 0.12)))
         return best_id, round(float(confidence), 4)
 
-    def detect(self, image_bytes: bytes, conf_thresh: float = 0.40) -> dict:
+    def detect(self, image_bytes: bytes, conf_thresh: float = 0.40, pixels_per_cm: float = None) -> dict:
         t_start = time.time()
 
         # Load image via PIL to support TIFF, PNG, JPG, WEBP
@@ -172,6 +172,17 @@ class FishDetector:
 
         detections = []
 
+        # Helper to compute calibrated length
+        def calc_length(w_px: int, h_px: int, sp_info: dict) -> float:
+            diag_px = math.sqrt(w_px * w_px + h_px * h_px)
+            if pixels_per_cm and pixels_per_cm > 0:
+                return round(float(diag_px / pixels_per_cm), 1)
+            # Biologically calibrated relative scale
+            sp_avg = sp_info.get("avg_length_cm", 30.0)
+            img_diag = math.sqrt(orig_w * orig_w + orig_h * orig_h)
+            rel_ratio = diag_px / max(1.0, img_diag)
+            return round(float(sp_avg * (0.65 + 0.55 * rel_ratio)), 1)
+
         # If custom YOLO model is loaded, use it
         if self.model is not None:
             results = self.model.predict(img_np, conf=conf_thresh, verbose=False)
@@ -183,9 +194,9 @@ class FishDetector:
                     x1, y1, x2, y2 = [int(v) for v in xyxy]
                     w = x2 - x1
                     h = y2 - y1
-                    est_len = round(float(math.sqrt(w * w + h * h) * 0.08), 1)
-
                     sp_info = SPECIES_MAP.get(cls_id, SPECIES_MAP[0])
+                    est_len = calc_length(w, h, sp_info)
+
                     detections.append({
                         "class_id": cls_id,
                         "class_name": f"{sp_info['scientific_name']} ({sp_info['common_name']})",
@@ -250,8 +261,7 @@ class FishDetector:
                 
                 if confidence >= conf_thresh:
                     sp_info = SPECIES_MAP.get(cls_id, SPECIES_MAP[0])
-                    # Length estimation formula: diagonal pixels * scale factor (assumes ~10-12 px/cm for 520px fish photo)
-                    est_len = round(float(math.sqrt(w * w + h * h) * 0.075), 1)
+                    est_len = calc_length(w, h, sp_info)
                     
                     detections.append({
                         "class_id": cls_id,

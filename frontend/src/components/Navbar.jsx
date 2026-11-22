@@ -1,7 +1,60 @@
 import React from 'react';
-import { Waves, UserCheck, Shield, ChevronDown } from 'lucide-react';
+import {
+  Waves,
+  Shield,
+  Lock,
+  LogIn,
+  LogOut,
+  Fish,
+  Store,
+  Building2,
+  UserCheck
+} from 'lucide-react';
 
-export default function Navbar({ currentUser, onSwitchRole, availableRoles }) {
+export default function Navbar({ currentUser, onOpenAuthModal, onLogout }) {
+  const isPublic = !currentUser || currentUser.role === 'Public';
+  const role = currentUser?.role || 'Public';
+
+  const getRoleBadge = () => {
+    switch (role) {
+      case 'Nelayan':
+        return {
+          icon: Fish,
+          label: 'Nelayan',
+          classes: 'bg-ocean-50 text-ocean-700 border-ocean-200'
+        };
+      case 'UMKM':
+        return {
+          icon: Store,
+          label: 'Mitra UMKM',
+          classes: 'bg-amber-50 text-amber-700 border-amber-200'
+        };
+      case 'Pengelola Pasar':
+        return {
+          icon: Building2,
+          label: 'Pengelola Pasar',
+          classes: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        };
+      case 'Admin & Stakeholder (DKP)':
+      case 'Admin':
+      case 'Stakeholder':
+        return {
+          icon: Shield,
+          label: 'Admin & DKP',
+          classes: 'bg-purple-50 text-purple-700 border-purple-200'
+        };
+      default:
+        return {
+          icon: Waves,
+          label: 'Tamu / Publik',
+          classes: 'bg-slate-100 text-slate-700 border-slate-200'
+        };
+    }
+  };
+
+  const badgeInfo = getRoleBadge();
+  const RoleIcon = badgeInfo.icon;
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -12,39 +65,72 @@ export default function Navbar({ currentUser, onSwitchRole, availableRoles }) {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-xl tracking-tight text-ocean-950">BlueEconomy<span className="text-ocean-600">.AI</span></span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-ocean-100 text-ocean-700 border border-ocean-200">v1.0 MVP</span>
+              <span className="font-extrabold text-xl tracking-tight text-ocean-950">
+                BlueEconomy<span className="text-ocean-600">.AI</span>
+              </span>
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${badgeInfo.classes}`}>
+                {isPublic ? 'Mode Publik' : badgeInfo.label}
+              </span>
             </div>
-            <p className="text-xs text-slate-500 hidden sm:block">Coastal Economic Intelligence & Empowerment Platform</p>
+            <p className="text-xs text-slate-500 hidden sm:block">
+              Platform Intelijen Ekonomi Pesisir &amp; Maritim Terintegrasi
+            </p>
           </div>
         </div>
 
-        {/* User & Role Switcher */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
-            <span className="text-slate-500 px-2 font-medium hidden md:inline">Simulasi Role:</span>
-            <select
-              value={currentUser?.role || "Nelayan"}
-              onChange={(e) => onSwitchRole(e.target.value)}
-              className="bg-white text-slate-800 font-semibold px-2.5 py-1 rounded-md border border-slate-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-ocean-500 cursor-pointer"
-            >
-              {availableRoles.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center space-x-3 pl-2 border-l border-slate-200">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shadow">
-              {currentUser?.name ? currentUser.name.charAt(0) : "U"}
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold text-slate-800 leading-tight">{currentUser?.name || "Pengguna"}</p>
-              <span className="inline-block text-[10px] font-medium text-marine-600 bg-marine-50 px-1.5 py-0.2 rounded border border-marine-200">
-                {currentUser?.role || "Nelayan"}
+        {/* Action Controls */}
+        <div className="flex items-center space-x-3">
+          {isPublic ? (
+            /* Mode Publik: Tombol Masuk / Daftar Akun */
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-slate-400 hidden md:inline">
+                Akses Terbuka untuk Umum
               </span>
+              <button
+                onClick={onOpenAuthModal}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-ocean-600 to-marine-600 hover:from-ocean-700 hover:to-marine-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-ocean-600/20"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Masuk / Daftar</span>
+              </button>
             </div>
-          </div>
+          ) : (
+            /* Mode Terautentikasi: Info Akun & Tombol Keluar */
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl">
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+                    role === 'Admin & Stakeholder (DKP)' || role === 'Admin'
+                      ? 'bg-purple-600 text-white'
+                      : role === 'Pengelola Pasar'
+                      ? 'bg-emerald-600 text-white'
+                      : role === 'UMKM'
+                      ? 'bg-amber-600 text-white'
+                      : 'bg-ocean-600 text-white'
+                  }`}
+                >
+                  <RoleIcon className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[150px]">
+                    {currentUser?.name || 'Pengguna'}
+                  </p>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {badgeInfo.label}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={onLogout}
+                title="Keluar dari akun dan kembali ke mode publik"
+                className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl text-xs font-bold transition border border-slate-200 hover:border-rose-200"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Keluar</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

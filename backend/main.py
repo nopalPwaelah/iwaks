@@ -127,12 +127,16 @@ class ConfirmDetectionRequest(BaseModel):
     save_as_catch: bool = False
     weight_kg: Optional[float] = None
     location_id: Optional[int] = None
+    target_market_id: Optional[int] = None
+    trade_status: Optional[str] = "none"
+    fisherman_name: Optional[str] = "Nelayan Tangguh"
     notes: Optional[str] = None
 
 class CatchDetailInput(BaseModel):
     species_id: int
     quantity: int
     weight_kg: float
+    offered_price_per_kg: Optional[float] = None
 
 class CostInput(BaseModel):
     cost_type: str
@@ -142,11 +146,23 @@ class CostInput(BaseModel):
 class CreateCatchRequest(BaseModel):
     location_id: Optional[int] = None
     location_name: Optional[str] = "TPI Muara Angke"
+    target_market_id: Optional[int] = None
+    trade_status: Optional[str] = "none"  # none, submitted, partially_accepted, accepted, rejected
+    fisherman_name: Optional[str] = "Nelayan Tangguh"
     catch_date: Optional[str] = None
     notes: Optional[str] = None
     detection_id: Optional[int] = None
     details: List[CatchDetailInput]
     costs: List[CostInput] = []
+
+class ReviewTradeItem(BaseModel):
+    detail_id: int
+    status: str  # accepted | rejected
+    response_note: Optional[str] = None
+
+class ReviewTradeRequest(BaseModel):
+    market_notes: Optional[str] = None
+    items: List[ReviewTradeItem]
 
 class CreatePriceRequest(BaseModel):
     species_id: int
@@ -181,6 +197,23 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Inisialisasi otomatis profil UMKM jika mendaftar sebagai UMKM
+    if req.role == "UMKM":
+        existing_umkm = db.query(UMKM).filter(UMKM.user_id == user.id).first()
+        if not existing_umkm:
+            new_umkm = UMKM(
+                user_id=user.id,
+                business_name=f"UMKM Olahan {req.name}",
+                owner_name=req.name,
+                category="Olahan Hasil Laut Pesisir",
+                city="Jakarta Utara",
+                address="Sentra Perikanan Muara Angke",
+                contact_phone=req.phone or "081234567890",
+                raw_material_needs="Ikan Bandeng, Ikan Kembung, Ikan Nila"
+            )
+            db.add(new_umkm)
+            db.commit()
 
     token = f"tok_{uuid.uuid4().hex[:16]}"
     ACTIVE_TOKENS[token] = user.id
@@ -278,7 +311,7 @@ def get_dashboard(user: User = Depends(get_current_user), db: Session = Depends(
             {
                 "id": c.id,
                 "location": c.location_name,
-                "date": c.catch_date.strftime("%Y-%m-%d %H:%M"),
+                "date": c.catch_date.strftime("%Y-%m-%d %H:%M") if c.catch_date else (c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M")),
                 "total_weight_kg": sum(d.weight_kg for d in c.details),
                 "species_list": [d.species.common_name for d in c.details if d.species]
             } for c in recent_catches
@@ -286,19 +319,19 @@ def get_dashboard(user: User = Depends(get_current_user), db: Session = Depends(
         "recent_detections": [
             {
                 "id": d.id,
-                "created_at": d.created_at.strftime("%Y-%m-%d %H:%M"),
+                "created_at": d.created_at.strftime("%Y-%m-%d %H:%M") if d.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M"),
                 "total_count": d.total_count,
                 "status": d.status,
-                "image_url": f"/uploads/{os.path.basename(d.image_path)}"
+                "image_url": f"/uploads/{os.path.basename(d.image_path)}" if d.image_path else ""
             } for d in recent_detections
         ],
         "market_price_feed": [
             {
-                "species": p.species.common_name,
-                "scientific": p.species.scientific_name,
-                "market": p.market.market_name,
+                "species": p.species.common_name if p.species else "Ikan",
+                "scientific": p.species.scientific_name if p.species else "-",
+                "market": p.market.market_name if p.market else "Pasar Pesisir",
                 "price": p.price_per_kg,
-                "observed_at": p.observed_at.strftime("%d %b %Y %H:%M")
+                "observed_at": p.observed_at.strftime("%d %b %Y %H:%M") if p.observed_at else datetime.utcnow().strftime("%d %b %Y %H:%M")
             } for p in top_prices
         ]
     }
@@ -423,7 +456,7 @@ def get_detection_detail(id: int, db: Session = Depends(get_db)):
         "image_height": det.image_height,
         "total_count": det.total_count,
         "status": det.status,
-        "created_at": det.created_at.strftime("%Y-%m-%d %H:%M"),
+        "created_at": det.created_at.strftime("%Y-%m-%d %H:%M") if det.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M"),
         "items": [
             {
                 "id": i.id,
@@ -477,6 +510,9 @@ def confirm_detection(
             user_id=user.id,
             location_id=req.location_id,
             location_name="TPI Muara Angke",
+            target_market_id=req.target_market_id,
+            trade_status=req.trade_status or "none",
+            fisherman_name=req.fisherman_name or user.name,
             catch_date=datetime.utcnow(),
             notes=req.notes or f"Hasil tangkapan dari deteksi AI #{det.id}",
             detection_id=det.id
@@ -496,11 +532,14 @@ def confirm_detection(
         weight_per_fish = total_weight / max(1, len(req.items))
 
         for sid, count in species_counts.items():
+            sp_obj = db.query(FishSpecies).filter(FishSpecies.id == sid).first()
             cd = CatchDetail(
                 catch_id=catch.id,
                 species_id=sid,
                 quantity=count,
-                weight_kg=round(count * weight_per_fish, 2)
+                weight_kg=round(count * weight_per_fish, 2),
+                status="pending" if req.trade_status == "submitted" else "accepted",
+                offered_price_per_kg=sp_obj.avg_price_idr if sp_obj else 30000.0
             )
             db.add(cd)
         db.commit()
@@ -549,9 +588,13 @@ def get_catches(user: User = Depends(get_current_user), db: Session = Depends(ge
         out.append({
             "id": c.id,
             "user_id": c.user_id,
-            "user_name": c.user.name if c.user else "Anonim",
+            "user_name": c.fisherman_name or (c.user.name if c.user else "Anonim"),
             "location_name": c.location_name,
-            "catch_date": c.catch_date.strftime("%Y-%m-%d %H:%M"),
+            "target_market_id": c.target_market_id,
+            "target_market_name": c.target_market.market_name if c.target_market else None,
+            "trade_status": c.trade_status or "none",
+            "market_notes": c.market_notes,
+            "catch_date": c.catch_date.strftime("%Y-%m-%d %H:%M") if c.catch_date else (c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M")),
             "notes": c.notes,
             "total_weight_kg": round(total_w, 2),
             "estimated_revenue": total_rev,
@@ -559,10 +602,14 @@ def get_catches(user: User = Depends(get_current_user), db: Session = Depends(ge
             "estimated_profit": total_rev - total_cost,
             "details": [
                 {
+                    "id": d.id,
                     "species_id": d.species_id,
                     "species_name": d.species.common_name if d.species else "Unknown",
                     "quantity": d.quantity,
-                    "weight_kg": d.weight_kg
+                    "weight_kg": d.weight_kg,
+                    "status": d.status or "pending",
+                    "offered_price_per_kg": d.offered_price_per_kg or (d.species.avg_price_idr if d.species else 30000),
+                    "market_response_note": d.market_response_note
                 } for d in c.details
             ],
             "operating_costs": [
@@ -588,6 +635,9 @@ def create_catch(req: CreateCatchRequest, user: User = Depends(get_current_user)
         user_id=user.id,
         location_id=req.location_id,
         location_name=req.location_name or "TPI Muara Angke",
+        target_market_id=req.target_market_id,
+        trade_status=req.trade_status or "none",
+        fisherman_name=req.fisherman_name or user.name,
         catch_date=c_date,
         notes=req.notes,
         detection_id=req.detection_id
@@ -597,11 +647,14 @@ def create_catch(req: CreateCatchRequest, user: User = Depends(get_current_user)
     db.refresh(catch)
 
     for d in req.details:
+        sp_obj = db.query(FishSpecies).filter(FishSpecies.id == d.species_id).first()
         cd = CatchDetail(
             catch_id=catch.id,
             species_id=d.species_id,
             quantity=d.quantity,
-            weight_kg=d.weight_kg
+            weight_kg=d.weight_kg,
+            status="pending" if req.trade_status == "submitted" else "accepted",
+            offered_price_per_kg=d.offered_price_per_kg or (sp_obj.avg_price_idr if sp_obj else 30000.0)
         )
         db.add(cd)
 
@@ -617,7 +670,100 @@ def create_catch(req: CreateCatchRequest, user: User = Depends(get_current_user)
     db.commit()
     return {"success": True, "message": "Catatan tangkapan berhasil disimpan.", "catch_id": catch.id}
 
+# ==================== 5. TRADE OFFERS & MARKET APPROVAL ====================
+
+@app.get("/api/trade-offers")
+def get_trade_offers(market_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """Mengambil pengajuan penawaran ikan nelayan ke pasar."""
+    query = db.query(Catch).filter(Catch.trade_status != "none")
+    if market_id:
+        query = query.filter(Catch.target_market_id == market_id)
+    
+    catches = query.order_by(Catch.created_at.desc()).all()
+    results = []
+    for c in catches:
+        total_w = sum(d.weight_kg for d in c.details)
+        total_val = sum(d.weight_kg * (d.offered_price_per_kg or 30000) for d in c.details)
+        results.append({
+            "catch_id": c.id,
+            "fisherman_name": c.fisherman_name or (c.user.name if c.user else "Nelayan"),
+            "target_market_id": c.target_market_id,
+            "target_market_name": c.target_market.market_name if c.target_market else "Pasar Bebas",
+            "trade_status": c.trade_status,
+            "market_notes": c.market_notes,
+            "created_at": c.created_at.strftime("%Y-%m-%d %H:%M") if c.created_at else (c.catch_date.strftime("%Y-%m-%d %H:%M") if c.catch_date else datetime.utcnow().strftime("%Y-%m-%d %H:%M")),
+            "total_weight_kg": round(total_w, 2),
+            "estimated_value": round(total_val, 2),
+            "items": [
+                {
+                    "detail_id": d.id,
+                    "species_id": d.species_id,
+                    "species_name": d.species.common_name if d.species else "Unknown",
+                    "quantity": d.quantity,
+                    "weight_kg": d.weight_kg,
+                    "price_per_kg": d.offered_price_per_kg or 30000,
+                    "status": d.status,  # pending | accepted | rejected
+                    "response_note": d.market_response_note
+                } for d in c.details
+            ]
+        })
+    return results
+
+@app.post("/api/trade-offers/{catch_id}/review")
+def review_trade_offer(
+    catch_id: int,
+    req: ReviewTradeRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Pengelola Pasar melakukan Accept / Decline komoditas tangkapan nelayan."""
+    catch = db.query(Catch).filter(Catch.id == catch_id).first()
+    if not catch:
+        raise HTTPException(status_code=404, detail="Pengajuan penawaran tidak ditemukan.")
+
+    for it in req.items:
+        detail = db.query(CatchDetail).filter(CatchDetail.id == it.detail_id, CatchDetail.catch_id == catch_id).first()
+        if detail:
+            detail.status = it.status
+            if it.response_note:
+                detail.market_response_note = it.response_note
+
+    catch.market_notes = req.market_notes
+
+    # Recalculate overall status
+    all_details = db.query(CatchDetail).filter(CatchDetail.catch_id == catch_id).all()
+    statuses = [d.status for d in all_details]
+    
+    if all(s == "accepted" for s in statuses):
+        catch.trade_status = "accepted"
+    elif all(s == "rejected" for s in statuses):
+        catch.trade_status = "rejected"
+    else:
+        catch.trade_status = "partially_accepted"
+
+    db.commit()
+    return {
+        "success": True,
+        "message": f"Pengajuan berhasil diproses: Status {catch.trade_status}",
+        "trade_status": catch.trade_status
+    }
+
 # ==================== 6. PRICE INTELLIGENCE (FR-11, FR-14) ====================
+
+@app.get("/api/markets")
+def get_markets(db: Session = Depends(get_db)):
+    """Daftar pasar ikan acuan untuk pengajuan dan pemantauan harga."""
+    mkts = db.query(Market).filter(Market.is_active == True).all()
+    return [
+        {
+            "id": m.id,
+            "market_name": m.market_name,
+            "address": m.address,
+            "city": m.city,
+            "distance_km": m.distance_km
+        }
+        for m in mkts
+    ]
 
 @app.get("/api/prices")
 def get_prices(
@@ -646,9 +792,9 @@ def get_prices(
             "price_per_kg": p.price_per_kg,
             "currency": p.currency,
             "source_name": p.source_name,
-            "observed_at": p.observed_at.strftime("%Y-%m-%d %H:%M"),
-            "is_fresh": (now - p.observed_at).days < 3,
-            "age_days": (now - p.observed_at).days
+            "observed_at": p.observed_at.strftime("%Y-%m-%d %H:%M") if p.observed_at else datetime.utcnow().strftime("%Y-%m-%d %H:%M"),
+            "is_fresh": (now - p.observed_at).days < 3 if p.observed_at else True,
+            "age_days": (now - p.observed_at).days if p.observed_at else 0
         } for p in prices
     ]
 
@@ -883,6 +1029,7 @@ def get_umkm_list(db: Session = Depends(get_db)):
     for u in umkms:
         out.append({
             "id": u.id,
+            "user_id": u.user_id,
             "business_name": u.business_name,
             "owner_name": u.owner_name,
             "description": u.description,
@@ -917,6 +1064,16 @@ def create_product(req: CreateProductRequest, db: Session = Depends(get_db)):
     db.add(p)
     db.commit()
     return {"success": True, "message": "Produk UMKM berhasil ditambahkan."}
+
+@app.delete("/api/umkm/products/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    p = db.query(Product).filter(Product.id == product_id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="Produk tidak ditemukan.")
+    p.is_active = False
+    db.commit()
+    return {"success": True, "message": "Produk berhasil dihapus."}
+
 
 # ==================== 11. SAMPLE DATASET IMAGES (1-CLICK TEST) ====================
 

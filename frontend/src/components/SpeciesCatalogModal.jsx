@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Fish, DollarSign, Scale, ArrowRight, Sparkles } from 'lucide-react';
+import { BookOpen, Fish, DollarSign, Scale, ArrowRight, Sparkles, Lock } from 'lucide-react';
 
-export default function SpeciesCatalogModal({ onTestSpecies }) {
+export default function SpeciesCatalogModal({ onTestSpecies, currentUser, onOpenAuthModal }) {
   const [speciesList, setSpeciesList] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const isPublic = !currentUser || currentUser.role === 'Public';
 
   useEffect(() => {
     fetch('/api/fish-species')
       .then((r) => r.json())
       .then((data) => {
-        setSpeciesList(data);
+        setSpeciesList(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
+        setSpeciesList([]);
         setLoading(false);
       });
   }, []);
@@ -68,13 +71,24 @@ export default function SpeciesCatalogModal({ onTestSpecies }) {
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-100">
-                <button
-                  onClick={() => onTestSpecies(sp.scientific_name)}
-                  className="w-full py-2 bg-ocean-50 hover:bg-ocean-600 hover:text-white text-ocean-700 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Uji Deteksi Citra Ini</span>
-                </button>
+                {isPublic ? (
+                  <button
+                    onClick={onOpenAuthModal}
+                    title="Akses Deteksi YOLO memerlukan akun Nelayan"
+                    className="w-full py-2 bg-slate-100 hover:bg-ocean-50 text-slate-600 hover:text-ocean-700 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 border border-slate-200"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Uji Deteksi (Masuk Nelayan)</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onTestSpecies(sp.scientific_name)}
+                    className="w-full py-2 bg-ocean-50 hover:bg-ocean-600 hover:text-white text-ocean-700 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Uji Deteksi Citra Ini</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}
