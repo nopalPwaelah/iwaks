@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Python Cache & Config
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+yolo_cfg/
+
+# Large Datasets & Training artifacts (GitHub max limit 100MB)
+dataset/
+dataset_yolo/
+runs/
+*.pt
+
+# Database
+*.db
+blueeconomy.db
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db

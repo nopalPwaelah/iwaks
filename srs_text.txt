@@ -1,0 +1,183 @@
+BLUEECONOMY AI
+COASTAL ECONOMIC INTELLIGENCE
+& EMPOWERMENT PLATFORM
+Software Requirements Specification (SRS)
+Spesifikasi Kebutuhan Perangkat Lunak
+Versi Dokumen: 1.0
+Tanggal: 22 November 2026
+Status: Draft untuk validasi dan pengembangan
+
+Disusun sebagai dokumen perencanaan proyek
+Informasi Dokumen
+Riwayat Perubahan
+Daftar Isi
+Di Microsoft Word, klik kanan bagian ini lalu pilih Update Field / Perbarui Bidang untuk membuat daftar isi otomatis jika field TOC ditambahkan. Untuk versi ini, gunakan Navigation Pane berdasarkan Heading.
+1. Pendahuluan
+1.1 Tujuan Dokumen
+Dokumen ini mendefinisikan kebutuhan fungsional, nonfungsional, antarmuka, data, batasan, dan kriteria penerimaan BlueEconomy AI. Dokumen menjadi acuan bagi analis, pengembang frontend dan backend, pengembang AI, penguji, serta stakeholder dalam menyepakati ruang lingkup dan perilaku sistem.
+1.2 Latar Belakang
+Pelaku ekonomi pesisir membutuhkan akses informasi yang lebih terstruktur mengenai hasil tangkapan, jenis dan jumlah ikan, harga komoditas, lokasi pasar, serta peluang usaha. Proses identifikasi dan pencatatan tangkapan yang masih manual dapat memerlukan waktu dan menyulitkan konsolidasi data. Informasi harga yang tersebar juga dapat menghambat pengambilan keputusan.
+BlueEconomy AI diusulkan sebagai platform yang mengintegrasikan layanan pencatatan, computer vision, informasi ekonomi, pemetaan geografis, dan pengelolaan UMKM. Sistem ini dimaksudkan sebagai alat bantu informasi dan keputusan, bukan pengganti penilaian ahli, alat ukur terkalibrasi, atau sumber harga resmi.
+1.3 Tujuan Produk
+Membantu pengguna mengidentifikasi dan menghitung ikan pada gambar menggunakan model YOLO.
+Menyediakan pencatatan hasil tangkapan yang terstruktur dan dapat ditinjau ulang.
+Menyajikan informasi harga komoditas berdasarkan jenis, lokasi pasar, dan tanggal data.
+Menyediakan perhitungan estimasi pendapatan, biaya, dan keuntungan.
+Menyajikan informasi lokasi pasar, nelayan, dan UMKM melalui peta.
+Mendukung UMKM dalam menampilkan profil, produk, dan kebutuhan bahan baku.
+1.4 Ruang Lingkup
+1.5 Definisi dan Singkatan
+2. Gambaran Umum Sistem
+2.1 Perspektif Produk
+BlueEconomy AI dirancang sebagai aplikasi web modular. Frontend berkomunikasi dengan backend melalui REST API. Backend mengelola autentikasi, data, validasi, dan aturan bisnis. Layanan AI terpisah menerima gambar dan mengembalikan hasil inferensi. Database relasional menyimpan data utama dan ekstensi spasial.
+Gambar 1. Konteks arsitektur tingkat tinggi
+2.2 Kelas Pengguna dan Karakteristik
+2.3 Lingkungan Operasi
+Aplikasi web diakses melalui browser modern pada desktop atau perangkat mobile.
+Koneksi internet diperlukan untuk sinkronisasi data dan penggunaan layanan AI berbasis server.
+Backend berjalan pada server Linux atau lingkungan cloud/VPS yang mendukung PHP dan layanan terkait.
+AI Service berjalan pada Python dengan dependensi model YOLO; akselerasi GPU bersifat opsional.
+Database menggunakan PostgreSQL; PostGIS diaktifkan untuk data geospasial.
+2.4 Asumsi dan Ketergantungan
+Pengguna atau petugas data menyediakan informasi harga dan tangkapan yang benar.
+Dataset gambar memiliki izin penggunaan yang sesuai dan anotasi yang konsisten.
+Kinerja model bergantung pada variasi spesies, sudut pengambilan gambar, pencahayaan, oklusi, dan kualitas gambar.
+Estimasi panjang ikan memerlukan referensi skala atau kalibrasi kamera; tanpa itu ukuran tidak boleh ditampilkan sebagai pengukuran pasti.
+Berat ikan harus berasal dari timbangan atau input pengguna yang dapat dipertanggungjawabkan.
+Rekomendasi pasar memerlukan data harga yang memiliki sumber, lokasi, dan tanggal pembaruan.
+3. Kebutuhan Fungsional
+Setiap kebutuhan di bawah menggunakan kata 'harus' untuk menyatakan perilaku wajib pada ruang lingkup yang ditentukan. Prioritas: Must = wajib untuk MVP; Should = penting setelah MVP; Could = pengembangan opsional.
+4. Kebutuhan Antarmuka Eksternal
+4.1 Antarmuka Pengguna
+Antarmuka harus responsif dan dapat digunakan pada ukuran layar desktop serta mobile.
+Form harus menampilkan label, validasi, dan pesan kesalahan yang mudah dipahami.
+Hasil AI harus menampilkan gambar dengan bounding box, nama kelas, confidence, dan jumlah objek.
+Informasi harga harus menampilkan satuan, lokasi/pasar, tanggal pembaruan, dan sumber data jika tersedia.
+Peta harus menyediakan legenda dan penjelasan simbol.
+4.2 Antarmuka Perangkat Lunak
+4.3 Antarmuka Komunikasi
+Komunikasi eksternal harus menggunakan HTTPS pada deployment publik. Endpoint internal AI sebaiknya tidak diekspos langsung ke publik tanpa autentikasi, pembatasan request, dan validasi file.
+5. Kebutuhan Nonfungsional
+6. Kebutuhan Data
+Catatan: nama tabel dan atribut merupakan rancangan awal. Skema final harus menetapkan tipe data, constraint, indeks, aturan penghapusan, audit trail, dan kebijakan retensi.
+7. Aturan Bisnis dan Batasan
+Hasil deteksi AI merupakan rekomendasi otomatis dan harus dapat ditinjau pengguna.
+Jumlah ikan dihitung dari objek yang lolos confidence threshold dan aturan Non-Maximum Suppression model.
+Confidence score tidak boleh ditafsirkan sebagai probabilitas kebenaran yang telah terkalibrasi.
+Estimasi ukuran tidak boleh ditampilkan sebagai nilai ukur pasti tanpa referensi skala dan kalibrasi yang sesuai.
+Berat ikan yang digunakan untuk analisis pendapatan berasal dari data timbangan atau input yang dinyatakan pengguna.
+Harga harus disertai tanggal, pasar/lokasi, satuan, dan sumber jika tersedia.
+Rekomendasi pasar harus mempertimbangkan biaya distribusi dan kesegaran data; jika data tidak cukup, sistem harus menyatakan rekomendasi belum tersedia.
+Sistem tidak melakukan transaksi atau pembayaran pada ruang lingkup MVP.
+8. Kriteria Penerimaan
+9. Risiko dan Mitigasi
+10. Referensi dan Catatan
+Struktur dokumen kebutuhan mengacu secara umum pada praktik rekayasa kebutuhan perangkat lunak. Referensi standar: ISO/IEC/IEEE 29148:2018, Systems and software engineering — Life cycle processes — Requirements engineering. Dokumen ini bukan salinan standar dan tidak menyatakan sertifikasi kepatuhan.
+Sumber resmi: https://www.iso.org/standard/72089.html
+Seluruh kebutuhan, target kinerja, sumber data, dan batasan harus dikonfirmasi bersama stakeholder sebelum menjadi baseline pengembangan.
+Atribut | Keterangan
+Nama sistem | BlueEconomy AI – Coastal Economic Intelligence & Empowerment Platform
+Jenis dokumen | Software Requirements Specification (SRS)
+Versi / tanggal | 1.0 / 22 November 2026
+Status | Draft awal untuk ditinjau dan divalidasi stakeholder
+Ruang lingkup | Platform digital perikanan dan ekonomi pesisir; fokus awal pada deteksi ikan berbasis YOLO, data tangkapan, harga, analisis ekonomi, GIS, dan UMKM
+Versi | Tanggal | Deskripsi | Status
+1.0 | 22-11-2026 | Penyusunan baseline kebutuhan sistem | Draft
+Termasuk dalam ruang lingkup | Di luar ruang lingkup MVP
+Autentikasi dan role pengguna | Pembayaran digital dan escrow
+Dashboard dan ringkasan data | Integrasi otomatis ke seluruh sistem pemerintah/pelabuhan
+Upload gambar, deteksi spesies dan hitung objek | Jaminan identifikasi seluruh spesies ikan
+Estimasi ukuran jika tersedia kalibrasi | Pengukuran berat hanya dari foto
+Input hasil tangkapan dan harga | Prediksi harga yang dijamin akurat
+Analisis keuntungan berbasis input pengguna | Mesin sortir fisik otomatis
+Peta lokasi dan sebaran data | Pelacakan kapal secara real-time tanpa perangkat tambahan
+Profil dan katalog produk UMKM | Marketplace penuh dengan transaksi dan logistik
+Istilah | Definisi
+AI | Artificial Intelligence; metode komputasi untuk melakukan tugas yang memerlukan kecerdasan.
+YOLO | You Only Look Once; keluarga model object detection.
+Object detection | Proses menemukan objek dan kelasnya pada gambar.
+Bounding box | Kotak koordinat yang menunjukkan lokasi objek terdeteksi.
+Confidence | Skor keyakinan prediksi model, bukan jaminan kebenaran.
+GIS | Geographic Information System.
+MVP | Minimum Viable Product; versi awal dengan fitur inti.
+API | Application Programming Interface.
+UMKM | Usaha Mikro, Kecil, dan Menengah.
+PENGGUNA (Nelayan • UMKM • Admin • Stakeholder) ↓ FRONTEND WEB (React + Tailwind CSS) ↓ REST API BACKEND (Laravel)  ↔  DATABASE (PostgreSQL + PostGIS) ↓ permintaan inferensi AI SERVICE (Python + FastAPI) → MODEL YOLO ↓ HASIL DETEKSI → VALIDASI PENGGUNA → PENYIMPANAN
+Aktor | Kebutuhan utama | Hak akses awal
+Nelayan | Deteksi ikan, pencatatan tangkapan, melihat harga dan estimasi pendapatan | Mengelola data milik sendiri; melihat informasi publik
+UMKM | Profil usaha, katalog produk, informasi komoditas dan pasar | Mengelola profil dan produk milik sendiri
+Admin | Mengelola pengguna, referensi, moderasi dan validasi data | Akses administratif sesuai kebijakan
+Pengelola pasar | Memasukkan dan memperbarui harga pasar | Mengelola harga pada pasar yang ditugaskan
+Stakeholder | Melihat statistik dan peta agregat | Akses baca terhadap data yang diizinkan
+ID | Nama | Pernyataan kebutuhan | Prioritas
+FR-01 | Registrasi akun | Sistem harus memungkinkan pengguna membuat akun dengan nama, email, kata sandi, dan informasi profil minimum. | Must
+FR-02 | Login dan logout | Sistem harus mengautentikasi pengguna dan menyediakan proses logout. | Must
+FR-03 | Kontrol akses | Sistem harus membatasi fitur dan data berdasarkan role pengguna. | Must
+FR-04 | Dashboard | Sistem harus menampilkan ringkasan data yang relevan dengan role pengguna. | Must
+FR-05 | Unggah gambar ikan | Sistem harus menerima gambar dengan format dan ukuran yang diizinkan serta menolak file tidak valid. | Must
+FR-06 | Deteksi objek ikan | Sistem harus mengirim gambar ke AI Service dan menerima kelas, confidence, serta koordinat bounding box. | Must
+FR-07 | Penghitungan ikan | Sistem harus menghitung objek hasil deteksi berdasarkan prediksi yang lolos threshold konfigurasi. | Must
+FR-08 | Konfirmasi hasil | Sistem harus menyediakan cara bagi pengguna untuk meninjau dan, bila diizinkan, mengoreksi hasil deteksi. | Must
+FR-09 | Estimasi ukuran | Sistem dapat menampilkan estimasi panjang hanya jika skala/kalibrasi tersedia dan metode dinyatakan. | Should
+FR-10 | Pencatatan tangkapan | Sistem harus menyimpan tanggal, lokasi, spesies, jumlah/berat, dan pemilik catatan sesuai data yang tersedia. | Must
+FR-11 | Data harga | Sistem harus menampilkan harga berdasarkan spesies, pasar/lokasi, satuan, sumber, dan tanggal data. | Must
+FR-12 | Analisis pendapatan | Sistem harus menghitung pendapatan dari berat aktual dan harga per satuan. | Must
+FR-13 | Analisis biaya dan keuntungan | Sistem harus menghitung estimasi keuntungan berdasarkan pendapatan dikurangi biaya yang dimasukkan. | Must
+FR-14 | Perbandingan pasar | Sistem harus membandingkan harga antar pasar jika tersedia data yang sebanding dan masih relevan. | Should
+FR-15 | Rekomendasi pasar | Sistem dapat memberi rekomendasi berdasarkan harga, jarak/biaya distribusi, waktu data, dan ketersediaan informasi. | Should
+FR-16 | Peta GIS | Sistem harus menampilkan lokasi dengan koordinat valid dan informasi yang diizinkan. | Should
+FR-17 | Manajemen UMKM | Sistem harus memungkinkan UMKM mengelola profil dan daftar produk. | Should
+FR-18 | Laporan | Sistem harus menyediakan ringkasan atau ekspor laporan sesuai hak akses. | Could
+FR-19 | Manajemen referensi | Admin harus dapat mengelola daftar spesies, kategori, lokasi pasar, dan referensi lainnya. | Must
+FR-20 | Audit data | Sistem sebaiknya menyimpan waktu pembuatan/perubahan dan identitas pengguna yang melakukan perubahan. | Should
+Komponen | Antarmuka / protokol | Keterangan
+Frontend ↔ Backend | HTTPS REST API, JSON | Autentikasi token dan pertukaran data aplikasi.
+Backend ↔ AI Service | HTTP internal API, multipart/form-data atau object storage reference | Mengirim gambar atau referensi file untuk inferensi.
+Backend ↔ Database | PostgreSQL connection | Penyimpanan data transaksi dan spasial.
+Frontend ↔ Map service | Tile/map provider sesuai lisensi | Menampilkan peta dasar dan layer tematik.
+ID | Aspek | Persyaratan
+NFR-01 | Kinerja API | Target respons untuk operasi API umum ≤ 3 detik pada lingkungan uji yang disepakati, tidak termasuk waktu inferensi gambar besar.
+NFR-02 | Kinerja AI | Waktu inferensi dan akurasi harus diukur pada perangkat target; target numerik ditetapkan setelah baseline dataset dan hardware tersedia.
+NFR-03 | Keamanan kata sandi | Kata sandi harus disimpan menggunakan algoritma hashing yang sesuai; tidak boleh disimpan dalam teks biasa.
+NFR-04 | Otorisasi | Setiap endpoint privat harus memeriksa identitas dan hak akses pengguna.
+NFR-05 | Validasi unggahan | Sistem harus memvalidasi MIME type, ekstensi, ukuran, dan isi file gambar.
+NFR-06 | Privasi | Data pribadi dan lokasi yang tidak perlu ditampilkan secara publik harus dibatasi berdasarkan role dan persetujuan.
+NFR-07 | Keandalan | Kegagalan AI Service atau database harus menghasilkan pesan kesalahan yang terkendali dan tidak merusak data.
+NFR-08 | Integritas data | Relasi dan transaksi database harus menjaga konsistensi data.
+NFR-09 | Kemudahan penggunaan | Alur utama unggah-deteksi-konfirmasi-simpan harus memiliki petunjuk dan status proses.
+NFR-10 | Skalabilitas | Komponen AI harus dapat ditingkatkan kapasitasnya secara terpisah dari backend utama.
+NFR-11 | Pemeliharaan | Kode harus modular, terdokumentasi, dan memiliki konfigurasi lingkungan terpisah.
+NFR-12 | Backup | Database dan file penting harus memiliki kebijakan backup dan uji pemulihan.
+NFR-13 | Aksesibilitas | Warna bukan satu-satunya pembeda status; teks dan label harus disediakan.
+NFR-14 | Keterlacakan AI | Versi model, waktu inferensi, threshold, dan metadata penting sebaiknya dicatat untuk audit.
+Entitas | Atribut utama | Keterangan
+Users | id, name, email, password_hash, role, created_at | Akun pengguna dan hak akses.
+FishSpecies | id, common_name, scientific_name, category | Referensi spesies ikan.
+Detections | id, user_id, image_path, model_version, total_count, created_at | Satu sesi inferensi.
+DetectionItems | id, detection_id, species_id, confidence, bbox, estimated_length | Objek ikan yang terdeteksi.
+Catches | id, user_id, location_id, catch_date, notes | Catatan hasil tangkapan.
+CatchDetails | id, catch_id, species_id, quantity, weight_kg | Rincian spesies dan kuantitas/berat.
+Markets | id, market_name, address, latitude, longitude | Lokasi pasar.
+FishPrices | id, species_id, market_id, price_per_kg, currency, source, observed_at | Harga dengan satuan dan waktu observasi.
+Locations | id, name, region, latitude, longitude, geom | Lokasi dan geometri spasial.
+UMKM | id, user_id, location_id, business_name, description | Profil usaha.
+Products | id, umkm_id, product_name, price, description | Produk UMKM.
+OperatingCosts | id, catch_id, cost_type, amount | Biaya yang terkait dengan hasil tangkapan/periode.
+ID | Skenario uji | Kriteria lulus
+AC-01 | Registrasi dengan data valid | Akun dibuat dan pengguna mendapat konfirmasi.
+AC-02 | Login dengan kredensial benar/salah | Login benar berhasil; kredensial salah ditolak dengan pesan aman.
+AC-03 | Unggah file bukan gambar | Sistem menolak file dan menjelaskan format yang diterima.
+AC-04 | Deteksi gambar valid | Sistem mengembalikan hasil kelas, confidence, bounding box, dan jumlah.
+AC-05 | AI Service tidak tersedia | Sistem menampilkan kegagalan terkendali dan tidak menyimpan hasil palsu.
+AC-06 | Konfirmasi dan simpan | Hasil yang disetujui tersimpan dengan pemilik dan waktu.
+AC-07 | Lihat harga | Harga menampilkan satuan, lokasi/pasar, tanggal, dan sumber yang tersedia.
+AC-08 | Hitung keuntungan | Perhitungan sesuai rumus pendapatan dikurangi biaya.
+AC-09 | Akses role | Pengguna tidak dapat mengakses data privat di luar kewenangannya.
+AC-10 | Tampilkan GIS | Lokasi dengan koordinat valid tampil pada peta dan detail yang sesuai.
+Risiko | Dampak | Mitigasi
+Dataset tidak representatif | Model bias atau gagal pada kondisi nyata | Kumpulkan data dari variasi lokasi, spesies, ukuran, pencahayaan dan kamera; lakukan uji lapangan.
+Ikan saling menutupi | Hitungan dan deteksi tidak akurat | Anotasi kondisi oklusi, dokumentasikan batas kemampuan, dan sediakan koreksi manual.
+Harga tidak mutakhir | Rekomendasi menyesatkan | Tampilkan tanggal dan sumber; tetapkan masa berlaku data.
+Koordinat tidak akurat | Peta salah lokasi | Validasi koordinat dan sediakan koreksi.
+Beban inferensi tinggi | Respons lambat | Batasi ukuran gambar, gunakan antrean, optimasi model, dan pisahkan layanan AI.
+Kebocoran data | Risiko privasi dan keamanan | RBAC, HTTPS, logging, backup aman, dan audit akses.

@@ -1,0 +1,266 @@
+BLUEECONOMY AI
+COASTAL ECONOMIC INTELLIGENCE
+& EMPOWERMENT PLATFORM
+Perancangan Desain Aplikasi (PDA)
+Arsitektur, proses, data, API, AI, dan antarmuka
+Versi Dokumen: 1.0
+Tanggal: 22 November 2026
+Status: Draft untuk validasi dan pengembangan
+
+Disusun sebagai dokumen perencanaan proyek
+Dokumen perancangan • Versi 1.0 | Halaman 
+BLUEECONOMY AI | PDA
+Informasi Dokumen
+1. Pendahuluan
+1.1 Tujuan Perancangan
+PDA menjelaskan rancangan teknis untuk mewujudkan kebutuhan yang telah didefinisikan pada SRS. Dokumen mencakup arsitektur aplikasi, pembagian modul, alur proses, rancangan basis data, kontrak API, integrasi YOLO, keamanan, pengujian, dan strategi implementasi.
+1.2 Prinsip Desain
+Modular: frontend, backend, AI Service, dan database memiliki tanggung jawab yang jelas.
+API-first: komunikasi antarkomponen menggunakan kontrak API yang terdokumentasi.
+Human-in-the-loop: hasil AI dapat ditinjau dan dikoreksi oleh pengguna.
+Data provenance: harga dan data ekonomi menyimpan sumber serta waktu pembaruan.
+Privacy by design: akses data mengikuti role dan kebutuhan operasional.
+MVP-first: implementasi dimulai dari fungsi inti yang dapat diuji.
+2. Arsitektur Sistem
+Gambar 1. Arsitektur logis
+2.1 Tanggung Jawab Komponen
+2.2 Pola Komunikasi
+Pengguna berinteraksi dengan aplikasi React melalui browser.
+Frontend mengirim request ke Laravel melalui HTTPS.
+Laravel memeriksa token, role, validasi, dan aturan bisnis.
+Untuk deteksi gambar, Laravel meneruskan file atau referensi file ke AI Service melalui jaringan internal.
+AI Service melakukan preprocessing dan inferensi YOLO, kemudian mengembalikan hasil terstruktur.
+Laravel menyimpan sesi deteksi dan item hasil setelah validasi, lalu mengirim respons ke frontend.
+Frontend menampilkan bounding box dan meminta konfirmasi pengguna sebelum hasil digunakan pada pencatatan tangkapan.
+3. Perancangan Modul
+4. Rancangan Alur Proses
+4.1 Proses Deteksi Ikan
+Gambar 2. Alur deteksi dan konfirmasi
+4.2 Proses Analisis Ekonomi
+Gambar 3. Alur analisis ekonomi
+4.3 Logika Rekomendasi Pasar
+Rekomendasi pasar tidak boleh hanya memilih harga jual tertinggi. Sistem perlu menghitung nilai bersih estimasi untuk setiap pasar yang datanya valid.
+Estimasi nilai bersih = (berat × harga pasar) − biaya distribusi − biaya tambahan yang relevan.
+Filter pasar berdasarkan komoditas dan rentang waktu data.
+Tolak atau tandai harga yang sudah melewati batas umur data yang ditetapkan.
+Hitung biaya distribusi dari jarak dan parameter biaya per kilometer atau input pengguna.
+Tampilkan asumsi, tanggal harga, sumber, dan estimasi biaya.
+Jika data jarak atau biaya tidak tersedia, tampilkan perbandingan harga saja dan jangan mengklaim rekomendasi keuntungan bersih.
+5. Rancangan Basis Data
+5.1 Entitas dan Relasi
+5.2 Rancangan Atribut Kunci
+5.3 Aturan Integritas
+Gunakan foreign key untuk relasi utama dan indeks pada kolom pencarian.
+Gunakan DECIMAL untuk nilai uang dan berat yang memerlukan presisi; hindari FLOAT untuk nominal transaksi.
+Gunakan timestamp dengan zona waktu yang konsisten dan tampilkan sesuai zona waktu pengguna.
+Tentukan soft delete atau aturan penghapusan untuk data yang memiliki histori.
+Simpan sumber dan waktu pembaruan pada data harga.
+Batasi akses gambar dan koordinat sensitif melalui backend.
+6. Rancangan API
+6.1 API Backend Laravel
+6.2 API AI Service
+6.3 Contoh Respons Deteksi
+Contoh berikut hanya ilustrasi kontrak data, bukan hasil pengujian model:
+{
+"success": true,
+"model_version": "fish-yolo-v1",
+"image": {"width": 1280, "height": 720},
+"total_count": 2,
+"inference_ms": 84,
+"detections": [
+{
+"class_id": 0,
+"class_name": "tuna",
+"confidence": 0.94,
+"bbox_xyxy": [120, 80, 350, 290]
+},
+{
+"class_id": 1,
+"class_name": "mackerel",
+"confidence": 0.91,
+"bbox_xyxy": [370, 100, 540, 260]
+}
+]
+}
+Backend perlu memvalidasi skema respons AI Service sebelum menyimpan data. Jika inferensi gagal, respons harus menyatakan kegagalan dan tidak membuat catatan deteksi yang seolah-olah berhasil.
+7. Perancangan AI dan Computer Vision
+7.1 Tujuan Model
+Model YOLO digunakan untuk mendeteksi lokasi objek ikan dan memprediksi kelas spesies yang tersedia pada dataset. Satu objek terdeteksi direpresentasikan sebagai kelas, confidence score, dan bounding box.
+7.2 Pipeline Dataset
+Tentukan daftar spesies prioritas berdasarkan kebutuhan wilayah dan ketersediaan data.
+Kumpulkan gambar dengan izin penggunaan yang sesuai; catat sumber dan lisensi.
+Pastikan variasi pencahayaan, latar, sudut, ukuran, kondisi basah/kering, dan kepadatan objek.
+Anotasi bounding box dengan pedoman kelas yang konsisten.
+Periksa kualitas anotasi dan lakukan review sampel.
+Pisahkan train, validation, dan test berdasarkan sumber/sesi pengambilan bila memungkinkan untuk mengurangi data leakage.
+Latih model baseline dan catat konfigurasi eksperimen.
+Evaluasi pada test set yang tidak digunakan selama training.
+7.3 Evaluasi Model
+7.4 Deteksi, Penghitungan, dan Penyortiran Digital
+Identifikasi: class label ditampilkan berdasarkan kelas yang dipelajari model.
+Penghitungan: jumlah objek dihitung dari deteksi yang lolos threshold dan postprocessing.
+Penyortiran digital: objek dapat dikelompokkan menurut panjang jika ada metode estimasi dan kalibrasi skala.
+Jika tidak ada kalibrasi, sistem hanya boleh menampilkan kelas/kelompok visual yang telah didefinisikan dan tidak menyebutnya ukuran fisik terukur.
+Penyortiran fisik otomatis memerlukan perangkat tambahan seperti conveyor, sensor, aktuator, kontroler, dan mekanisme keselamatan; fitur tersebut tidak termasuk MVP.
+7.5 Batasan Model
+YOLO tidak secara langsung mengukur berat, kesegaran, mutu konsumsi, atau nilai pasar ikan. Deteksi spesies dapat terganggu oleh oklusi, objek bertumpuk, gambar buram, spesies mirip, dan domain shift antara dataset dan kondisi lapangan. Pengguna perlu dapat menandai hasil yang salah untuk evaluasi dan perbaikan dataset.
+8. Rancangan UI/UX
+8.1 Pedoman Visual
+Gunakan identitas visual bernuansa biru laut dan teal dengan kontras teks yang memadai.
+Gunakan navigasi konsisten dan label yang mudah dipahami pengguna nonteknis.
+Tampilkan status proses AI: mengunggah, memproses, berhasil, atau gagal.
+Pada hasil AI, bedakan hasil prediksi dan hasil yang telah dikonfirmasi pengguna.
+Pada grafik harga, tampilkan satuan, rentang waktu, dan sumber data.
+9. Keamanan dan Privasi
+Gunakan HTTPS untuk seluruh komunikasi publik.
+Gunakan Laravel Sanctum atau mekanisme token yang sesuai untuk autentikasi API.
+Terapkan role-based access control pada route, controller, dan query data.
+Hash password menggunakan algoritma yang direkomendasikan framework.
+Validasi MIME type, ekstensi, ukuran, dan isi file; simpan file dengan nama acak.
+Simpan AI Service pada jaringan internal atau lindungi dengan autentikasi service-to-service.
+Batasi ukuran request, rate, dan jumlah proses inferensi untuk mencegah penyalahgunaan.
+Jangan menampilkan lokasi pribadi atau kontak UMKM tanpa pengaturan publikasi yang jelas.
+Catat aktivitas administratif dan perubahan harga untuk audit.
+Siapkan backup database, file, serta prosedur pemulihan.
+10. Strategi Pengujian
+11. Rencana Implementasi
+12. Prioritas Rilis
+13. Risiko Teknis dan Mitigasi
+14. Keputusan Desain yang Masih Harus Divalidasi
+Daftar spesies ikan prioritas untuk versi pertama.
+Sumber dataset, lisensi, dan kebijakan anotasi.
+Varian YOLO dan ukuran input berdasarkan hasil eksperimen serta perangkat deployment.
+Metode kalibrasi panjang ikan dan standar kategori ukuran per spesies.
+Sumber harga, frekuensi pembaruan, dan pihak yang memvalidasi.
+Rumus biaya distribusi dan parameter rekomendasi pasar.
+Wilayah pilot dan kebijakan publikasi lokasi nelayan/UMKM.
+Apakah akun pengguna dapat memiliki lebih dari satu role.
+15. Referensi
+ISO/IEC/IEEE 29148:2018, Systems and software engineering — Life cycle processes — Requirements engineering. Digunakan sebagai referensi umum untuk pengelolaan kebutuhan; rancangan teknis pada dokumen ini perlu ditinjau sesuai konteks proyek.
+Sumber resmi: https://www.iso.org/standard/72089.html
+Dokumentasi teknologi yang perlu dirujuk pada tahap implementasi: dokumentasi resmi Laravel, React, FastAPI, PostgreSQL/PostGIS, serta dokumentasi framework/model YOLO yang dipilih.
+Dokumen perancangan • Versi 1.0 | Halaman 
+Atribut | Keterangan
+Nama sistem | BlueEconomy AI – Coastal Economic Intelligence & Empowerment Platform
+Jenis dokumen | Perancangan Desain Aplikasi (PDA)
+Versi / tanggal | 1.0 / 22 November 2026
+Status | Rancangan awal untuk validasi teknis
+Dokumen terkait | BlueEconomy AI SRS v1.0
+PRESENTATION LAYER React.js + Tailwind CSS | Dashboard, Form, Peta, Visualisasi ↓ HTTPS / JSON APPLICATION LAYER Laravel REST API | Auth, RBAC, Validasi, Aturan Bisnis, Reporting ↙ ↘ DATA LAYER AI LAYER PostgreSQL + PostGIS Python + FastAPI ↓ YOLO Model (.pt) ↓ Detection Results
+Komponen | Tanggung jawab | Teknologi rancangan
+Frontend | Tampilan, navigasi, form, validasi awal, visualisasi, peta | React.js, Tailwind CSS, Chart.js, Leaflet
+Backend | Autentikasi, otorisasi, CRUD, validasi, aturan bisnis, agregasi | Laravel, REST API
+AI Service | Penerimaan gambar, preprocessing, inferensi, postprocessing | Python, FastAPI, OpenCV, library YOLO
+Model AI | Deteksi kelas ikan dan bounding box | YOLO; varian dipilih setelah uji perangkat
+Database | Data akun, spesies, tangkapan, harga, UMKM, hasil deteksi | PostgreSQL
+Spatial extension | Penyimpanan dan query koordinat/geometri | PostGIS
+File storage | Penyimpanan gambar asli dan hasil visualisasi | Local object storage pada tahap awal; object storage saat skala meningkat
+Modul | Subfungsi | Aktor utama | Prioritas
+Authentication & Authorization | Register, login, logout, role, policy | Semua pengguna | MVP
+Dashboard | Ringkasan tangkapan, harga, statistik sesuai role | Semua pengguna | MVP
+AI Fish Detection | Upload, inferensi, bounding box, kelas, hitung objek, koreksi | Nelayan | MVP
+Catch Management | Buat, ubah, lihat catatan tangkapan dan detail spesies | Nelayan | MVP
+Price Intelligence | Input, validasi, histori dan filter harga | Admin/Pengelola pasar | MVP
+Profit Analysis | Pendapatan, biaya, keuntungan estimasi | Nelayan | MVP
+Market Recommendation | Perbandingan pasar dan ranking berbasis biaya distribusi | Nelayan/UMKM | Tahap 2
+Coastal GIS | Layer lokasi, filter wilayah, detail titik | Stakeholder/Admin | Tahap 2
+UMKM Management | Profil, produk, kategori, informasi usaha | UMKM | Tahap 2
+Reporting | Rekap dan ekspor laporan | Admin/Stakeholder | Tahap 3
+Mulai → Pengguna membuka modul deteksi ↓ Pilih / unggah gambar ↓ Validasi format, ukuran, dan isi file ↓ Kirim ke Laravel → AI Service ↓ Preprocessing → YOLO inference → Postprocessing ↓ Kembalikan kelas, confidence, bbox, dan jumlah ↓ Tampilkan hasil → Pengguna meninjau/koreksi ↓ Simpan hasil yang dikonfirmasi → Selesai
+Data tangkapan (spesies, berat aktual, lokasi, tanggal) ↓ Ambil harga pasar yang cocok (spesies, lokasi, tanggal, satuan) ↓ Masukkan biaya (BBM, es, tenaga kerja, transportasi, biaya lain) ↓ Pendapatan = berat aktual × harga per kg ↓ Keuntungan estimasi = pendapatan − total biaya ↓ Bandingkan pasar dengan memperhitungkan biaya distribusi ↓ Tampilkan ringkasan, asumsi, sumber dan waktu data
+Entitas | Primary key | Relasi penting
+users | id | 1:N catches, detections; 1:1 atau 1:N umkm sesuai kebijakan akun
+fish_species | id | 1:N detection_items, catch_details, fish_prices
+detections | id | N:1 users; 1:N detection_items
+detection_items | id | N:1 detections; N:1 fish_species (nullable jika unknown)
+catches | id | N:1 users; N:1 locations; 1:N catch_details
+catch_details | id | N:1 catches; N:1 fish_species
+markets | id | 1:N fish_prices
+fish_prices | id | N:1 markets; N:1 fish_species
+locations | id | Dipakai oleh catches dan UMKM; dapat menyimpan geometri
+umkm | id | N:1 users; N:1 locations; 1:N products
+products | id | N:1 umkm
+operating_costs | id | N:1 catches atau referensi periode usaha
+Tabel | Atribut yang disarankan | Catatan desain
+users | id BIGINT, name VARCHAR, email VARCHAR UNIQUE, password VARCHAR, role VARCHAR, created_at, updated_at | Password hash; role sebaiknya dibatasi enum/reference.
+fish_species | id, common_name, scientific_name, code, is_active | Nama ilmiah dapat nullable bila belum tervalidasi.
+detections | id, user_id, image_path, model_version, image_width, image_height, confidence_threshold, total_count, inference_ms, created_at | Simpan metadata model untuk audit.
+detection_items | id, detection_id, species_id NULL, class_label, confidence, x1, y1, x2, y2, estimated_length_cm NULL | Koordinat disimpan konsisten terhadap ukuran gambar; ukuran hanya jika terkalibrasi.
+catches | id, user_id, location_id, catch_date, notes, created_at | Lokasi dan tanggal diperlukan untuk analisis.
+catch_details | id, catch_id, species_id, quantity, weight_kg | Jangan menyamakan jumlah objek deteksi dengan berat aktual.
+markets | id, market_name, address, latitude, longitude, is_active | Koordinat dapat memakai tipe geospatial.
+fish_prices | id, species_id, market_id, price_per_kg, currency, source_name, observed_at, created_by | Indeks pada species_id, market_id, observed_at.
+locations | id, name, region, latitude, longitude, geom | Gunakan PostGIS untuk query spasial.
+umkm | id, user_id, location_id, business_name, description, contact_public | Batasi informasi kontak sesuai persetujuan.
+products | id, umkm_id, product_name, description, price, unit, is_active | Harga dan satuan harus jelas.
+operating_costs | id, catch_id, cost_type, amount, notes | Jumlah biaya menggunakan DECIMAL.
+Method | Endpoint | Input/Output ringkas | Akses
+POST | /api/register | Nama, email, password → akun | Publik
+POST | /api/login | Email, password → token | Publik
+POST | /api/logout | Token → status logout | Autentikasi
+GET | /api/dashboard | Ringkasan sesuai role | Autentikasi
+POST | /api/detections | image file → detection_id dan hasil | Nelayan/role berizin
+GET | /api/detections/{id} | Detail hasil deteksi | Pemilik/Admin
+POST | /api/detections/{id}/confirm | Koreksi/konfirmasi hasil | Pemilik
+GET | /api/fish-species | Daftar spesies | Autentikasi
+POST | /api/catches | Data tangkapan dan detail | Nelayan
+GET | /api/catches | Daftar tangkapan sesuai akses | Autentikasi
+GET | /api/prices | Filter species, market, date | Autentikasi
+POST | /api/prices | Data harga dan sumber | Pengelola/Admin
+GET | /api/profit-analysis | catch_id atau parameter perhitungan | Pemilik
+GET | /api/market-recommendations | Komoditas, lokasi, berat, biaya | Autentikasi
+GET | /api/gis/locations | Filter tipe dan wilayah | Autentikasi
+GET | /api/umkm | Daftar UMKM | Autentikasi
+POST | /api/umkm/products | Data produk | Pemilik UMKM
+Method | Endpoint | Fungsi
+GET | /health | Memeriksa kesiapan layanan dan model.
+POST | /predict | Menerima gambar dan menghasilkan deteksi.
+GET | /model/info | Mengembalikan versi model, kelas, dan konfigurasi aman.
+Metrik | Tujuan | Interpretasi
+Precision | Mengukur proporsi prediksi positif yang benar | Precision rendah menunjukkan banyak false positive.
+Recall | Mengukur proporsi objek sebenarnya yang berhasil ditemukan | Recall rendah menunjukkan banyak objek terlewat.
+mAP@0.5 | Mengukur kualitas deteksi pada IoU 0.5 | Digunakan sebagai salah satu metrik deteksi.
+mAP@0.5:0.95 | Mengukur kualitas pada rentang IoU | Lebih ketat terhadap ketepatan bounding box.
+Confusion matrix | Melihat pola salah klasifikasi | Membantu menemukan kelas yang sering tertukar.
+Inference time | Mengukur waktu proses | Harus diuji pada perangkat deployment.
+Halaman | Komponen utama | Interaksi penting
+Login/Registrasi | Form email, password, validasi | Pesan kesalahan, reset password bila dikembangkan
+Dashboard | Kartu ringkasan, grafik, aktivitas terbaru | Filter tanggal/wilayah sesuai role
+AI Detection | Upload, preview, tombol proses, hasil bbox, daftar kelas | Tinjau, koreksi, konfirmasi, simpan
+Catch Management | Form tanggal, lokasi, spesies, jumlah, berat | Tambah/edit/detail catatan
+Price Intelligence | Filter spesies, pasar, tanggal; tabel/grafik | Bandingkan harga dan lihat sumber
+Profit Analysis | Input berat, harga, biaya | Hitung dan tampilkan asumsi
+Coastal GIS | Peta, layer, legenda, filter | Klik marker untuk detail
+UMKM | Profil usaha, katalog produk | Tambah/edit/nonaktifkan produk
+Admin | Pengguna, referensi spesies, pasar, moderasi | Kelola dan audit perubahan
+Jenis pengujian | Fokus | Contoh
+Unit test | Fungsi kecil dan aturan bisnis | Rumus keuntungan, validasi input, policy akses.
+Integration test | Komunikasi antar komponen | Laravel memanggil AI Service dan menyimpan hasil.
+API test | Kontrak endpoint | Status code, schema JSON, autentikasi.
+AI evaluation | Kualitas deteksi | Precision, recall, mAP, confusion matrix.
+Usability test | Kemudahan penggunaan | Nelayan menyelesaikan alur upload dan pencatatan.
+Security test | Akses dan input berbahaya | Akses lintas akun, file berbahaya, rate limiting.
+Performance test | Waktu respons dan beban | API umum, unggah gambar, inferensi bersamaan.
+Field validation | Kesesuaian kondisi nyata | Uji gambar dari lokasi dan perangkat target.
+Tahap | Aktivitas | Keluaran
+1. Analisis | Validasi SRS, aktor, ruang lingkup MVP | SRS baseline
+2. Desain | ERD, API contract, wireframe, arsitektur | PDA final dan desain teknis
+3. Fondasi | Repository, environment, database, autentikasi | Aplikasi dasar berjalan
+4. Backend & Frontend | CRUD, dashboard, form, role, integrasi API | Modul inti terhubung
+5. Dataset & AI | Kurasi, anotasi, training, evaluasi YOLO | Model baseline dan laporan evaluasi
+6. Integrasi AI | FastAPI, upload, inferensi, hasil, konfirmasi | Alur deteksi end-to-end
+7. Ekonomi & GIS | Harga, biaya, analisis, peta | Modul ekonomi dan spasial
+8. Pengujian | Unit, integrasi, usability, keamanan, lapangan | Laporan pengujian dan perbaikan
+9. Deployment | Konfigurasi server, domain, backup, monitoring | Versi uji/pilot
+Rilis | Fitur | Alasan
+MVP / Rilis 1 | Login, dashboard dasar, YOLO deteksi dan hitung, konfirmasi, pencatatan tangkapan, input/lihat harga | Membuktikan alur utama dari gambar ke data tangkapan dan informasi harga.
+Rilis 2 | Analisis keuntungan, perbandingan pasar, GIS, profil dan katalog UMKM | Memperluas manfaat ekonomi dan pemetaan.
+Rilis 3 | Prediksi tren harga, rekomendasi lanjutan, integrasi alat sortir fisik | Memerlukan data historis, validasi lapangan, dan perangkat tambahan.
+Risiko | Mitigasi teknis
+Kelas ikan sulit dibedakan | Perjelas definisi kelas, tambah data representatif, tampilkan opsi unknown/review.
+Jumlah ikan salah pada objek bertumpuk | Uji skenario oklusi, anotasi rapat, koreksi manual, jelaskan batas kemampuan.
+Estimasi ukuran tidak valid | Gunakan kalibrasi kamera/referensi skala dan validasi pengukuran.
+Layanan AI lambat | Resize terkontrol, optimasi model, antrean, dan pemisahan service.
+Data harga tidak konsisten | Standarisasi satuan, validasi sumber, timestamp, dan moderasi.
+Peta tidak akurat | Validasi koordinat, normalisasi CRS, dan kontrol kualitas data spasial.
+Kebocoran data | RBAC, HTTPS, validasi, audit, backup aman, dan review keamanan.
