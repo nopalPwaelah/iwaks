@@ -1,6 +1,6 @@
 """
-BlueEconomy AI - Script Pelatihan Model YOLO untuk Deteksi Ikan
-Mengonversi Fish_Dataset menjadi format YOLO (images & labels) dan melatih model YOLOv8.
+BlueEconomy AI - Script Pelatihan Model YOLOv11 untuk Deteksi Ikan
+Mengonversi Fish_Dataset menjadi format YOLO (images & labels) dan melatih model YOLOv11.
 """
 
 import os
@@ -85,8 +85,8 @@ def train_yolo(epochs: int = 5, batch_size: int = 8):
     yolo_dir = prepare_yolo_dataset(max_samples_per_class=30)
     from ultralytics import YOLO
 
-    print("Memulai pelatihan YOLOv8 nano...")
-    model = YOLO("yolov8n.pt")
+    print("Memulai pelatihan YOLOv11 nano (yolo11n.pt)...")
+    model = YOLO("yolo11n.pt")
     results = model.train(
         data=str(yolo_dir / "data.yaml"),
         epochs=epochs,

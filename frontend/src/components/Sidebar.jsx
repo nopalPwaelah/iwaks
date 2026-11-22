@@ -13,7 +13,7 @@ import {
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard Utama', icon: LayoutDashboard },
-  { id: 'ai-detection', label: 'AI Deteksi & Hitung Ikan', icon: ScanEye, badge: 'YOLO v1' },
+  { id: 'ai-detection', label: 'AI Deteksi & Hitung Ikan', icon: ScanEye, badge: 'YOLO v11' },
   { id: 'catches', label: 'Catatan Tangkapan', icon: ClipboardList },
   { id: 'prices', label: 'Intelijen Harga', icon: TrendingUp },
   { id: 'profit', label: 'Analisis Keuntungan', icon: Calculator },

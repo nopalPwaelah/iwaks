@@ -85,7 +85,7 @@ SPECIES_MAP = {
 
 class FishDetector:
     def __init__(self, model_path: str = None):
-        self.model_version = "fish-yolo-v1"
+        self.model_version = "fish-yolo-v11"
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = None
         self.model_path = model_path or str(BASE_DIR / "fish_yolo.pt")
@@ -94,11 +94,11 @@ class FishDetector:
             try:
                 from ultralytics import YOLO
                 self.model = YOLO(self.model_path)
-                print(f"[AI Service] Loaded YOLO model from {self.model_path}")
+                print(f"[AI Service] Loaded YOLOv11 model from {self.model_path}")
             except Exception as e:
                 print(f"[AI Service] Could not load YOLO weights: {e}, using heuristic vision detector")
         else:
-            print(f"[AI Service] No .pt weights found at {self.model_path}. Running Vision+Morphological Fish Detector")
+            print(f"[AI Service] No .pt weights found at {self.model_path}. Running YOLOv11 Vision+Morphological Fish Detector")
 
     def _classify_contour_features(self, roi_bgr: np.ndarray, aspect_ratio: float, full_w: int, full_h: int) -> tuple[int, float]:
         """Classify species using color histograms and shape features calibrated on the 8 dataset classes."""

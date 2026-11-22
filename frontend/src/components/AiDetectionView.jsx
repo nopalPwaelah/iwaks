@@ -225,10 +225,10 @@ export default function AiDetectionView({ onCatchSaved }) {
             <span className="w-8 h-8 rounded-lg bg-ocean-50 text-ocean-700 flex items-center justify-center font-bold">
               <Fish className="w-5 h-5" />
             </span>
-            <h1 className="text-xl font-bold text-slate-900">Deteksi &amp; Penghitungan Objek Ikan (YOLO)</h1>
+            <h1 className="text-xl font-bold text-slate-900">Deteksi &amp; Penghitungan Objek Ikan (YOLOv11)</h1>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Modul Computer Vision berbasis model YOLO untuk klasifikasi 8 spesies ikan pesisir dengan dukungan validasi Human-in-the-Loop.
+            Modul Computer Vision berbasis model YOLOv11 untuk klasifikasi 8 spesies ikan pesisir dengan dukungan validasi Human-in-the-Loop.
           </p>
         </div>
 
