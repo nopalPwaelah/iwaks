@@ -13,7 +13,13 @@ import math
 import numpy as np
 from PIL import Image
 import cv2
-import torch
+
+try:
+    import torch
+    HAS_TORCH = True
+except ImportError:
+    torch = None
+    HAS_TORCH = False
 
 # Species catalog mapping from local Fish_Dataset
 SPECIES_MAP = {
@@ -86,7 +92,7 @@ SPECIES_MAP = {
 class FishDetector:
     def __init__(self, model_path: str = None):
         self.model_version = "fish-yolo-v11"
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if (HAS_TORCH and torch and torch.cuda.is_available()) else "cpu"
         self.model = None
         self.model_path = model_path or str(BASE_DIR / "fish_yolo.pt")
 
