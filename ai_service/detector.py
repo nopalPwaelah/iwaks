@@ -1,10 +1,17 @@
 import os
 from pathlib import Path
 
-# Fix Ultralytics config dir on Windows sandbox
+# Fix Ultralytics config dir on Windows sandbox or Vercel read-only filesystem
 BASE_DIR = Path(__file__).resolve().parent
-CONFIG_DIR = BASE_DIR / "yolo_config"
-(CONFIG_DIR / "Ultralytics").mkdir(parents=True, exist_ok=True)
+if os.environ.get("VERCEL"):
+    CONFIG_DIR = Path("/tmp/yolo_config")
+else:
+    CONFIG_DIR = BASE_DIR / "yolo_config"
+
+try:
+    (CONFIG_DIR / "Ultralytics").mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
 os.environ["YOLO_CONFIG_DIR"] = str(CONFIG_DIR)
 
 import time
@@ -12,7 +19,13 @@ import io
 import math
 import numpy as np
 from PIL import Image
-import cv2
+
+try:
+    import cv2
+    HAS_CV2 = True
+except Exception:
+    cv2 = None
+    HAS_CV2 = False
 
 try:
     import torch

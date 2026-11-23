@@ -38,8 +38,15 @@ except ImportError:
     from detector import detector, SPECIES_MAP
 
 # Setup directories
-UPLOADS_DIR = BASE_DIR / "uploads"
-UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+if os.environ.get("VERCEL"):
+    UPLOADS_DIR = Path("/tmp/uploads")
+else:
+    UPLOADS_DIR = BASE_DIR / "uploads"
+
+try:
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
 
 app = FastAPI(
     title="BlueEconomy AI - Coastal Economic Intelligence Platform API",
@@ -56,7 +63,20 @@ app.add_middleware(
 )
 
 # Mount uploads static folder
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+try:
+    app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+except Exception:
+    pass
+
+@app.on_event("startup")
+def init_db_on_startup():
+    try:
+        from backend.models import Base
+        Base.metadata.create_all(bind=engine)
+        from backend.seed import seed_database
+        seed_database()
+    except Exception as e:
+        print(f"[Startup] DB init error: {e}")
 
 # Mount built frontend dist if available
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
