@@ -183,6 +183,16 @@ class CreateProductRequest(BaseModel):
 
 @app.post("/api/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    # Keamanan: Peran Administrator & DKP tidak diizinkan melalui registrasi publik
+    if req.role in ["Admin", "Stakeholder", "Admin & Stakeholder (DKP)"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Pendaftaran akun Administrator/DKP tidak diizinkan melalui form publik."
+        )
+
+    allowed_roles = ["Nelayan", "UMKM", "Pengelola Pasar"]
+    assigned_role = req.role if req.role in allowed_roles else "Nelayan"
+
     existing = db.query(User).filter(User.email == req.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
@@ -191,7 +201,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         name=req.name,
         email=req.email,
         password_hash=hash_pw(req.password),
-        role=req.role,
+        role=assigned_role,
         phone=req.phone
     )
     db.add(user)
@@ -438,6 +448,7 @@ async def create_detection(
         "inference_ms": detection.inference_ms,
         "status": detection.status,
         "detections": detection_items_out,
+        "items": detection_items_out,
         "disclaimer": result.get("disclaimer")
     }
 

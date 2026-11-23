@@ -56,21 +56,31 @@ export default function AiDetectionView({ onCatchSaved, onNavigate }) {
   useEffect(() => {
     fetch('/api/sample-images')
       .then((r) => r.json())
-      .then((data) => setSampleImages(data))
-      .catch((err) => console.error(err));
+      .then((data) => setSampleImages(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error(err);
+        setSampleImages([]);
+      });
 
     fetch('/api/fish-species')
       .then((r) => r.json())
-      .then((data) => setSpeciesCatalog(data))
-      .catch((err) => console.error(err));
+      .then((data) => setSpeciesCatalog(Array.isArray(data) ? data : []))
+      .catch((err) => {
+        console.error(err);
+        setSpeciesCatalog([]);
+      });
 
     fetch('/api/markets')
       .then((r) => r.json())
       .then((data) => {
-        setMarkets(data);
-        if (data.length > 0) setSelectedMarketId(data[0].id);
+        const mList = Array.isArray(data) ? data : [];
+        setMarkets(mList);
+        if (mList.length > 0) setSelectedMarketId(mList[0].id);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        setMarkets([]);
+      });
   }, []);
 
   // Draw bounding boxes on canvas whenever detectionResult or items change

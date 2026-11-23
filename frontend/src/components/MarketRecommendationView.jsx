@@ -23,11 +23,13 @@ export default function MarketRecommendationView() {
     fetch('/api/fish-species')
       .then((r) => r.json())
       .then((data) => {
-        setSpeciesCatalog(data);
-        if (data.length > 0) {
-          setSelectedSpeciesId(data[0].id);
+        const list = Array.isArray(data) ? data : [];
+        setSpeciesCatalog(list);
+        if (list.length > 0) {
+          setSelectedSpeciesId(list[0].id);
         }
-      });
+      })
+      .catch(() => setSpeciesCatalog([]));
   }, []);
 
   const fetchRecommendations = () => {
@@ -35,11 +37,12 @@ export default function MarketRecommendationView() {
     fetch(`/api/market-recommendations?species_id=${selectedSpeciesId}&weight_kg=${weightKg}&transport_rate_per_km=${transportRatePerKm}`)
       .then((r) => r.json())
       .then((data) => {
-        setRecommendations(data.recommendations || []);
+        setRecommendations(Array.isArray(data?.recommendations) ? data.recommendations : []);
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
+        setRecommendations([]);
         setLoading(false);
       });
   };

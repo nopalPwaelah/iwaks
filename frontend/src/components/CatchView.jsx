@@ -47,11 +47,12 @@ export default function CatchView() {
     fetch('/api/catches')
       .then((r) => r.json())
       .then((data) => {
-        setCatches(data);
+        setCatches(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch((err) => {
         console.error(err);
+        setCatches([]);
         setLoading(false);
       });
   };
@@ -60,14 +61,17 @@ export default function CatchView() {
     fetchCatches();
     fetch('/api/fish-species')
       .then((r) => r.json())
-      .then((data) => setSpeciesCatalog(data));
+      .then((data) => setSpeciesCatalog(Array.isArray(data) ? data : []))
+      .catch(() => setSpeciesCatalog([]));
 
     fetch('/api/markets')
       .then((r) => r.json())
       .then((data) => {
-        setMarkets(data);
-        if (data.length > 0) setTargetMarketId(data[0].id);
-      });
+        const mList = Array.isArray(data) ? data : [];
+        setMarkets(mList);
+        if (mList.length > 0) setTargetMarketId(mList[0].id);
+      })
+      .catch(() => setMarkets([]));
   }, []);
 
   const handleAddFormRow = () => {

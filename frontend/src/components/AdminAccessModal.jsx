@@ -3,6 +3,7 @@ import { Shield, KeyRound, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { setAuthToken } from '../lib/api';
 
 export default function AdminAccessModal({ isOpen, onClose, onAdminSuccess }) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -20,7 +21,7 @@ export default function AdminAccessModal({ isOpen, onClose, onAdminSuccess }) {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@blueeconomy.id', password: password })
+        body: JSON.stringify({ email: email, password: password })
       });
       const data = await res.json();
 

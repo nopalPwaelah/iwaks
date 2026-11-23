@@ -33,13 +33,15 @@ export default function ProfitView() {
     fetch('/api/fish-species')
       .then((r) => r.json())
       .then((data) => {
-        setSpeciesCatalog(data);
-        if (data.length > 0 && catchItems.length === 0) {
+        const list = Array.isArray(data) ? data : [];
+        setSpeciesCatalog(list);
+        if (list.length > 0 && catchItems.length === 0) {
           setCatchItems([
-            { id: 1, species_id: data[0].id, species_name: data[0].common_name, weight_kg: 30.0, price_per_kg: data[0].avg_price_idr }
+            { id: 1, species_id: list[0].id, species_name: list[0].common_name, weight_kg: 30.0, price_per_kg: list[0].avg_price_idr }
           ]);
         }
-      });
+      })
+      .catch(() => setSpeciesCatalog([]));
   }, []);
 
   const handleAddCommodity = () => {

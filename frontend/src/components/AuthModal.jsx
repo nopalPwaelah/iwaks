@@ -45,15 +45,6 @@ const DEMO_ACCOUNTS = [
     desc: 'Pembaruan harga komoditas harian & verifikasi dagang ikan masuk',
     icon: Building2,
     tone: 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-  },
-  {
-    role: 'Admin & Stakeholder (DKP)',
-    label: 'Admin & DKP',
-    email: 'admin@blueeconomy.id',
-    password: 'password123',
-    desc: 'Audit pelabuhan, regulator maritim, dan master data katalog',
-    icon: Shield,
-    tone: 'border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100'
   }
 ];
 
@@ -274,7 +265,7 @@ export default function AuthModal({
                     <input
                       type="email"
                       required
-                      placeholder="contoh: nelayan@blueeconomy.id"
+                      placeholder="Masukkan alamat email..."
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-ocean-500 text-xs font-medium text-slate-800"
@@ -320,10 +311,10 @@ export default function AuthModal({
                 <div className="flex items-center justify-between mb-2.5">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1">
                     <Zap className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Uji Coba Cepat 1-Klik Akun Demo:</span>
+                    <span>Uji Coba Cepat Akun Publik (Demo):</span>
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {DEMO_ACCOUNTS.map((acc) => {
                     const Icon = acc.icon;
                     return (
