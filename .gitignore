@@ -30,3 +30,7 @@ Thumbs.db
 # Virtual environment
 venv/
 .venv/
+
+# Binaries & local tunnels
+cloudflared.exe
+*.exe

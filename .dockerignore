@@ -1,0 +1,13 @@
+dataset/
+dataset_yolo/
+runs/
+.git/
+node_modules/
+frontend/node_modules/
+frontend/src/
+*.docx
+*.bat
+pda_text.txt
+srs_text.txt
+__pycache__/
+*.pyc

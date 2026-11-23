@@ -8,10 +8,12 @@ import {
   Fish,
   Store,
   Building2,
-  UserCheck
+  UserCheck,
+  Menu,
+  X
 } from 'lucide-react';
 
-export default function Navbar({ currentUser, onOpenAuthModal, onLogout }) {
+export default function Navbar({ currentUser, onOpenAuthModal, onLogout, isMobileMenuOpen, onToggleMobileMenu }) {
   const isPublic = !currentUser || currentUser.role === 'Public';
   const role = currentUser?.role || 'Public';
 
@@ -58,17 +60,25 @@ export default function Navbar({ currentUser, onOpenAuthModal, onLogout }) {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand */}
+        {/* Brand & Mobile Hamburger */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-ocean-700 to-marine-500 flex items-center justify-center text-white shadow-md shadow-ocean-500/20">
+          <button
+            onClick={onToggleMobileMenu}
+            aria-label="Toggle Menu"
+            className="md:hidden p-2 rounded-xl text-slate-600 hover:text-ocean-700 hover:bg-slate-100 transition focus:outline-none"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-ocean-700 to-marine-500 flex items-center justify-center text-white shadow-md shadow-ocean-500/20 flex-shrink-0">
             <Waves className="w-6 h-6 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="font-extrabold text-xl tracking-tight text-ocean-950">
+              <span className="font-extrabold text-lg sm:text-xl tracking-tight text-ocean-950">
                 BlueEconomy<span className="text-ocean-600">.AI</span>
               </span>
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${badgeInfo.classes}`}>
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border hidden sm:inline-block ${badgeInfo.classes}`}>
                 {isPublic ? 'Mode Publik' : badgeInfo.label}
               </span>
             </div>

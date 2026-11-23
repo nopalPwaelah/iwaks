@@ -24,6 +24,7 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState(PUBLIC_USER);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authModalConfig, setAuthModalConfig] = useState({
     defaultTab: 'login',
     initialRole: 'Nelayan'
@@ -71,16 +72,23 @@ export default function App() {
           currentUser={currentUser}
           onOpenAuthModal={() => handleOpenAuth('login', 'Nelayan')}
           onLogout={handleLogout}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
         />
 
-        <div className="flex flex-1">
+        <div className="flex flex-1 relative">
           <Sidebar
             currentTab={safeTab}
-            onSelectTab={setCurrentTab}
+            onSelectTab={(tab) => {
+              setCurrentTab(tab);
+              setIsMobileMenuOpen(false);
+            }}
             allowedTabs={allowedTabs}
+            isMobileOpen={isMobileMenuOpen}
+            onCloseMobile={() => setIsMobileMenuOpen(false)}
           />
 
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl overflow-y-auto">
+          <main className="w-full flex-1 min-w-0 p-3 sm:p-6 lg:p-8 max-w-7xl overflow-y-auto">
             {safeTab === 'dashboard' && (
               <DashboardView
                 onNavigate={setCurrentTab}

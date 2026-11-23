@@ -1131,6 +1131,14 @@ def stream_sample_image(species: str, filename: str):
 
     return FileResponse(file_path)
 
+if FRONTEND_DIST.exists():
+    @app.get("/{full_path:path}")
+    def serve_frontend_catchall(full_path: str):
+        file_path = FRONTEND_DIST / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(FRONTEND_DIST / "index.html")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=False)
